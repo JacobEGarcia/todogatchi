@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TODOGATCHI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#F3DCE3; color:#3A2E35; font-family:'Nunito',system-ui,sans-serif; min-height:100vh;
+    background-image:radial-gradient(rgba(58,46,53,.05) 1.5px, transparent 1.5px); background-size:26px 26px; }
+  .mono { font-family:'Fredoka',sans-serif; letter-spacing:.12em; }
+  header { text-align:center; padding:36px 16px 10px; }
+  h1 { font-family:'Fredoka',sans-serif; font-weight:600; letter-spacing:.18em; font-size:clamp(26px,4.5vw,38px); }
+  h1::before, h1::after { content:""; display:inline-block; width:9px; height:9px; border-radius:50%; background:#E98AA8; margin:0 14px 6px; }
+  h1::after { background:#7FB5A9; }
+  .sub { color:#9C7E8C; font-size:11px; letter-spacing:.24em; margin-top:8px; font-family:'Fredoka',sans-serif; text-transform:uppercase; }
+  main { max-width:900px; margin:0 auto; padding:18px 16px 40px; display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  @media (max-width:700px){ main { grid-template-columns:1fr; } }
+  .card { background:#FDF6F0; border:2px solid #3A2E35; border-radius:22px; padding:20px; box-shadow:0 5px 0 rgba(58,46,53,.16); }
+  #petCard { text-align:center; background:#CDE4DC; }
+  #petCanvas { width:100%; max-width:320px; aspect-ratio:1; border:2px solid #3A2E35; border-radius:16px;
+    box-shadow:inset 0 3px 10px rgba(58,46,53,.18); background:#F8F4EA; }
+  #petName { font-family:'Fredoka',sans-serif; font-weight:600; font-size:22px; margin-top:10px; }
+  #petStage { color:#5E7A72; font-size:10px; letter-spacing:.26em; font-family:'Fredoka',sans-serif; margin-top:3px; text-transform:uppercase; }
+  .stats { margin-top:16px; text-align:left; }
+  .stat { margin-bottom:11px; }
+  .stat label { font-family:'Fredoka',sans-serif; font-size:10px; letter-spacing:.2em; color:#5E7A72; display:flex; justify-content:space-between; text-transform:uppercase; }
+  .track { height:10px; background:#FDF6F0; border:2px solid #3A2E35; border-radius:99px; margin-top:5px; overflow:hidden; }
+  .fill { height:100%; border-radius:99px; transition:width .5s; }
+  .f-hunger { background:#E8A85C; } .f-happy { background:#7FB5A9; } .f-energy { background:#8FA6CB; }
+  #moodLine { margin-top:14px; font-style:italic; color:#6b5a52; font-size:14px; min-height:20px; }
+  .meta { display:flex; justify-content:space-around; margin-top:8px; padding-top:14px; border-top:2px dashed rgba(58,46,53,.25);
+    font-family:'Fredoka',sans-serif; font-size:10px; letter-spacing:.2em; color:#5E7A72; text-transform:uppercase; }
+  .meta b { color:#3A2E35; font-size:20px; display:block; text-align:center; font-weight:600; }
+  h2.cardtitle { font-family:'Fredoka',sans-serif; font-size:12px; font-weight:600; letter-spacing:.3em; color:#9C7E8C; margin-bottom:16px; text-transform:uppercase; }
+  .addrow { display:flex; gap:8px; margin-bottom:14px; }
+  #taskInput { flex:1; padding:12px 15px; border:2px solid #3A2E35; border-radius:12px; font-family:'Nunito',sans-serif; font-size:14px; background:#FFFDF9; }
+  #taskInput:focus { outline:3px solid rgba(233,138,168,.4); }
+  button { cursor:pointer; font-family:'Fredoka',sans-serif; }
+  #addBtn { padding:12px 20px; background:#3A2E35; color:#FDF6F0; border:2px solid #3A2E35; border-radius:12px; letter-spacing:.14em; font-weight:600; box-shadow:0 3px 0 rgba(58,46,53,.3); }
+  #addBtn:hover { background:#E98AA8; border-color:#3A2E35; }
+  #addBtn:active { transform:translateY(2px); box-shadow:none; }
+  ul { list-style:none; }
+  li.task { display:flex; align-items:center; gap:10px; padding:11px 8px; border-bottom:1.5px dashed rgba(58,46,53,.18); font-size:15px; }
+  li.task.done label { text-decoration:line-through; color:#B79CA9; }
+  li.task input[type=checkbox] { width:18px; height:18px; accent-color:#7FB5A9; cursor:pointer; }
+  li.task label { flex:1; cursor:pointer; }
+  .del { background:none; border:none; color:#C9AEB9; font-size:17px; padding:2px 7px; border-radius:6px; }
+  .del:hover { color:#B3402A; background:#F6E3DC; }
+  .empty { color:#B79CA9; font-style:italic; text-align:center; padding:24px 0; font-size:14px; }
+  #rename { background:none; border:none; color:#B79CA9; font-size:11px; margin-left:6px; font-family:'Fredoka',sans-serif; letter-spacing:.08em; }
+  #rename:hover { color:#3A2E35; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TODOGATCHI</h1>
+  <div class="sub">YOUR TO-DO LIST IS ALIVE. FEED IT FINISHED TASKS.</div>
+</header>
+<main>
+  <div class="card" id="petCard">
+    <canvas id="petCanvas" width="340" height="340"></canvas>
+    <div id="petName">Pixel <button id="rename" title="rename">rename</button></div>
+    <div id="petStage">STAGE: EGG</div>
+    <div class="stats">
+      <div class="stat"><label>FULLNESS <span id="vHunger"></span></label><div class="track"><div class="fill f-hunger" id="bHunger"></div></div></div>
+      <div class="stat"><label>HAPPINESS <span id="vHappy"></span></label><div class="track"><div class="fill f-happy" id="bHappy"></div></div></div>
+      <div class="stat"><label>ENERGY <span id="vEnergy"></span></label><div class="track"><div class="fill f-energy" id="bEnergy"></div></div></div>
+    </div>
+    <div id="moodLine"></div>
+    <div class="meta">
+      <div><b id="mFed">0</b>TASKS FED</div>
+      <div><b id="mStreak">0</b>DAY STREAK</div>
+      <div><b id="mXp">0</b>XP</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2 class="cardtitle">TASKS</h2>
+    <div class="addrow">
+      <input id="taskInput" maxlength="120" placeholder="one small thing..." autocomplete="off">
+      <button id="addBtn">ADD</button>
+    </div>
+    <ul id="taskList"></ul>
+    <div class="empty" id="emptyMsg">Nothing here. Your pet is watching you.</div>
+  </div>
+</main>
+
+<script>
+(function(){
+"use strict";
+// ---------- state ----------
+const KEY='todogatchi-v1';
+let S = load() || {
+  name:'Pixel', xp:0, fed:0,
+  hunger:70, happy:70, energy:80,
+  lastSeen:Date.now(), lastDay:dayKey(), streak:0,
+  tasks:[]
+};
+function dayKey(d){ const x=d?new Date(d):new Date(); return x.getFullYear()+'-'+(x.getMonth()+1)+'-'+x.getDate(); }
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)); }catch(e){ return null; } }
+function save(){ S.lastSeen=Date.now(); localStorage.setItem(KEY, JSON.stringify(S)); }
+
+// offline decay: pets get hungry while you're gone (forgiving: capped)
+function applyOffline(){
+  const hrs = Math.min(48, (Date.now()-(S.lastSeen||Date.now()))/3.6e6);
+  if(hrs>0.05){
+    S.hunger = Math.max(5, S.hunger - hrs*2.2);
+    S.happy  = Math.max(5, S.happy  - hrs*1.6);
+    S.energy = Math.min(100, S.energy + hrs*3);
+  }
+  // streak rollover
+  const today = dayKey(), last = S.lastDay;
+  if(today!==last){
+    const y = new Date(); y.setDate(y.getDate()-1);
+    S.streak = (last===dayKey(y) && S.fedToday>0) ? S.streak : (S.fedToday>0? S.streak : 0);
+    S.fedToday = 0; S.lastDay = today;
+  }
+}
+applyOffline();
+
+// ---------- pet stage ----------
+function stage(){
+  if(S.xp<50) return {n:0, label:'EGG'};
+  if(S.xp<150) return {n:1, label:'BABY'};
+  if(S.xp<350) return {n:2, label:'KID'};
+  return {n:3, label:'GROWN'};
+}
+function mood(){
+  const m = Math.min(S.hunger,S.happy,S.energy);
+  if(S.hunger<20) return 'so hungry it is chewing on the concept of errands';
+  if(S.happy<20) return 'gloomily staring at your unchecked boxes';
+  if(S.energy<20) return 'too tired to judge you. almost.';
+  if(m>75) return 'beaming. absolutely thriving on your productivity';
+  if(m>45) return 'content, but watching the list';
+  return 'getting by. could use a completed task or two';
+}
+
+// ---------- tasks ----------
+const listEl = document.getElementById('taskList');
+const emptyMsg = document.getElementById('emptyMsg');
+function renderTasks(){
+  listEl.innerHTML='';
+  emptyMsg.style.display = S.tasks.length? 'none':'block';
+  S.tasks.forEach(t=>{
+    const li=document.createElement('li');
+    li.className='task'+(t.done?' done':'');
+    const cb=document.createElement('input');
+    cb.type='checkbox'; cb.checked=!!t.done;
+    cb.addEventListener('change', ()=>toggleTask(t.id));
+    const lb=document.createElement('label'); lb.textContent=t.text;
+    lb.addEventListener('click', ()=>{ cb.checked=!cb.checked; toggleTask(t.id); });
+    const del=document.createElement('button'); del.className='del'; del.textContent='×'; del.title='delete';
+    del.addEventListener('click', ()=>{ S.tasks=S.tasks.filter(x=>x.id!==t.id); save(); renderTasks(); });
+    li.appendChild(cb); li.appendChild(lb); li.appendChild(del);
+    listEl.appendChild(li);
+  });
+}
+function toggleTask(id){
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  t.done=!t.done;
+  if(t.done){
+    S.fed++; S.fedToday=(S.fedToday||0)+1; S.xp+=10;
+    S.hunger=Math.min(100,S.hunger+16);
+    S.happy=Math.min(100,S.happy+12);
+    S.energy=Math.max(0,S.energy-4);
+    if(S.fedToday===1) S.streak++;
+    blip(); celebrate=true; celebrateT=1.2;
+  } else {
+    S.xp=Math.max(0,S.xp-10); S.fed=Math.max(0,S.fed-1);
+  }
+  save(); renderTasks(); renderStats();
+}
+document.getElementById('addBtn').addEventListener('click', addTask);
+document.getElementById('taskInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addTask(); });
+function addTask(){
+  const inp=document.getElementById('taskInput');
+  const v=inp.value.trim(); if(!v) return;
+  S.tasks.push({id:Date.now()+'-'+Math.random().toString(36).slice(2,7), text:v, done:false});
+  inp.value=''; save(); renderTasks();
+}
+document.getElementById('rename').addEventListener('click', ()=>{
+  const n=prompt('Pet name:', S.name);
+  if(n && n.trim()){ S.name=n.trim().slice(0,24); save(); renderStats(); }
+});
+
+// ---------- stats render ----------
+function renderStats(){
+  document.getElementById('petName').firstChild.textContent = S.name+' ';
+  document.getElementById('petStage').textContent = 'STAGE: '+stage().label;
+  const set=(id,v)=>{ document.getElementById('b'+id).style.width=v+'%'; document.getElementById('v'+id).textContent=Math.round(v)+'%'; };
+  set('Hunger',S.hunger); set('Happy',S.happy); set('Energy',S.energy);
+  document.getElementById('moodLine').textContent='"'+mood()+'"';
+  document.getElementById('mFed').textContent=S.fed;
+  document.getElementById('mStreak').textContent=S.streak;
+  document.getElementById('mXp').textContent=S.xp;
+}
+
+// ---------- pet canvas ----------
+const cv=document.getElementById('petCanvas'), cx=cv.getContext('2d');
+let celebrate=false, celebrateT=0, blink=0, nextBlink=2+Math.random()*3;
+function drawPet(t){
+  cx.clearRect(0,0,340,340);
+  // backdrop
+  cx.fillStyle='#f8f4ea'; cx.fillRect(0,0,340,340);
+  cx.strokeStyle='#e3dccb'; cx.strokeRect(8,8,324,324);
+  const s=stage().n;
+  const lowEnergy = S.energy<25;
+  const bob = lowEnergy? 0 : Math.sin(t/450)*6;
+  const baseY = 240 + (s===0?0:bob);
+  const cxp=170;
+  // shadow
+  cx.fillStyle='rgba(43,38,32,.12)';
+  cx.beginPath(); cx.ellipse(cxp, 268, 46+s*16, 10+s*2, 0, 0, 7); cx.fill();
+  if(s===0){
+    // egg
+    cx.fillStyle='#fff8ea'; cx.strokeStyle='#2b2620'; cx.lineWidth=3;
+    cx.beginPath(); cx.ellipse(cxp, baseY-42, 44, 54, 0, 0, 7); cx.fill(); cx.stroke();
+    cx.fillStyle='#e8b04b';
+    cx.beginPath(); cx.arc(cxp-12, baseY-58, 6, 0, 7); cx.fill();
+    cx.beginPath(); cx.arc(cxp+14, baseY-30, 5, 0, 7); cx.fill();
+    cx.beginPath(); cx.arc(cxp-4, baseY-16, 4, 0, 7); cx.fill();
+    // crack grows with xp
+    const crack = S.xp/50;
+    if(crack>0.3){
+      cx.strokeStyle='#2b2620'; cx.lineWidth=2; cx.beginPath();
+      cx.moveTo(cxp-30, baseY-50);
+      cx.lineTo(cxp-10, baseY-44); cx.lineTo(cxp+2, baseY-52); cx.lineTo(cxp+18, baseY-46);
+      cx.stroke();
+    }
+    return;
+  }
+  const R = 40+s*14;               // body radius
+  const body = ['#e8b04b','#e8b04b','#7aa874','#6a8eae'][s];
+  const dark = ['#c99238','#c99238','#5f8a5a','#52708a'][s];
+  const wob = lowEnergy? 0 : Math.sin(t/300)*0.06;
+  cx.save(); cx.translate(cxp, baseY-R); cx.rotate(wob);
+  // feet
+  cx.fillStyle=dark;
+  cx.beginPath(); cx.ellipse(-R*0.45, R+6, R*0.28, R*0.16, 0, 0, 7); cx.fill();
+  cx.beginPath(); cx.ellipse(R*0.45, R+6, R*0.28, R*0.16, 0, 0, 7); cx.fill();
+  // body
+  cx.fillStyle=body; cx.strokeStyle='#2b2620'; cx.lineWidth=3;
+  cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.fill(); cx.stroke();
+  // belly
+  cx.fillStyle='rgba(255,253,248,.55)';
+  cx.beginPath(); cx.ellipse(0, R*0.3, R*0.55, R*0.45, 0, 0, 7); cx.fill();
+  // ears/horns by stage
+  cx.fillStyle=body; cx.strokeStyle='#2b2620'; cx.lineWidth=3;
+  if(s>=2){
+    cx.beginPath(); cx.moveTo(-R*0.6,-R*0.75); cx.lineTo(-R*0.35,-R*1.15); cx.lineTo(-R*0.15,-R*0.72); cx.closePath(); cx.fill(); cx.stroke();
+    cx.beginPath(); cx.moveTo(R*0.6,-R*0.75); cx.lineTo(R*0.35,-R*1.15); cx.lineTo(R*0.15,-R*0.72); cx.closePath(); cx.fill(); cx.stroke();
+  }
+  if(s>=3){ // little crown
+    cx.fillStyle='#e8b04b';
+    cx.beginPath(); cx.moveTo(-14,-R-2); cx.lineTo(-14,-R-16); cx.lineTo(-7,-R-8); cx.lineTo(0,-R-18); cx.lineTo(7,-R-8); cx.lineTo(14,-R-16); cx.lineTo(14,-R-2); cx.closePath(); cx.fill(); cx.stroke();
+  }
+  // eyes
+  const sleepy = lowEnergy;
+  blink -= 1/60;
+  if(blink < -3){ nextBlink=2+Math.random()*3; blink=nextBlink; }
+  const blinking = blink<0.12;
+  cx.strokeStyle='#2b2620'; cx.fillStyle='#2b2620'; cx.lineWidth=2.5;
+  const ey=-R*0.15, ex=R*0.38;
+  if(sleepy || blinking){
+    cx.beginPath(); cx.moveTo(-ex-7,ey); cx.lineTo(-ex+7,ey); cx.stroke();
+    cx.beginPath(); cx.moveTo(ex-7,ey); cx.lineTo(ex+7,ey); cx.stroke();
+  } else {
+    cx.beginPath(); cx.arc(-ex, ey, 6, 0, 7); cx.fill();
+    cx.beginPath(); cx.arc(ex, ey, 6, 0, 7); cx.fill();
+    cx.fillStyle='#fffdf8';
+    cx.beginPath(); cx.arc(-ex+2, ey-2, 2, 0, 7); cx.fill();
+    cx.beginPath(); cx.arc(ex+2, ey-2, 2, 0, 7); cx.fill();
+  }
+  // mouth by mood
+  const m=Math.min(S.hunger,S.happy,S.energy);
+  cx.strokeStyle='#2b2620'; cx.lineWidth=3; cx.beginPath();
+  if(celebrate){ cx.arc(0, R*0.22, 12, 0, Math.PI); }        // big open smile
+  else if(m>60){ cx.arc(0, R*0.18, 10, 0.15*Math.PI, 0.85*Math.PI); }
+  else if(m>30){ cx.moveTo(-8,R*0.3); cx.lineTo(8,R*0.3); }
+  else { cx.arc(0, R*0.42, 9, 1.15*Math.PI, 1.85*Math.PI); } // frown
+  cx.stroke();
+  cx.restore();
+  // hearts while celebrating
+  if(celebrate){
+    cx.fillStyle='#c86a6a'; cx.font='18px Georgia';
+    for(let i=0;i<3;i++){
+      const hx=cxp-40+i*40, hy=110-((1.2-celebrateT)*40)+Math.sin(t/200+i)*6;
+      cx.globalAlpha=Math.max(0,celebrateT/1.2);
+      cx.fillText('♥', hx, hy);
+    }
+    cx.globalAlpha=1;
+  }
+  // zzz while sleepy
+  if(lowEnergy){
+    cx.fillStyle='#8a7f6a'; cx.font='16px Courier New';
+    cx.fillText('z', cxp+R+14+Math.sin(t/600)*4, baseY-R-20-(t/60%30));
+    cx.fillText('z', cxp+R+26, baseY-R-34-(t/60%30));
+  }
+}
+
+// ---------- audio blip ----------
+let AC=null;
+function blip(){
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(660, AC.currentTime);
+    o.frequency.setValueAtTime(990, AC.currentTime+0.08);
+    g.gain.setValueAtTime(0.0001, AC.currentTime);
+    g.gain.linearRampToValueAtTime(0.12, AC.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime+0.3);
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime+0.35);
+  }catch(e){}
+}
+
+// ---------- live decay tick ----------
+setInterval(()=>{
+  S.hunger=Math.max(0,S.hunger-0.05);
+  S.happy=Math.max(0,S.happy-0.03);
+  if(S.hunger>30) S.energy=Math.min(100,S.energy+0.04);
+  save(); renderStats();
+}, 6000);
+
+// ---------- main ----------
+function frame(t){
+  if(celebrate){ celebrateT-=1/60; if(celebrateT<=0) celebrate=false; }
+  drawPet(t);
+  requestAnimationFrame(frame);
+}
+renderTasks(); renderStats();
+requestAnimationFrame(frame);
+})();
+</script></body></html>
